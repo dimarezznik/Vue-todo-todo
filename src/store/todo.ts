@@ -4,11 +4,26 @@ export interface postType {
   id: number;
   text: string;
   changeSave: boolean;
-  todos: [];
+  todos: TodosTypes[];
 }
 
 export interface postsType {
   posts: postType[];
+}
+
+interface TodosTypes {
+  id: number;
+  text: string;
+  changeSave: boolean;
+  isDone: boolean;
+}
+
+function todoFromPosts(state: any, payload: any) {
+  return state.posts.find((post: postType) => {
+    if (Number(payload.urlId) === post.id) {
+      return post.todos;
+    }
+  });
 }
 
 export const todo = {
@@ -50,6 +65,58 @@ export const todo = {
       });
       setLocalStorage("posts", state.posts);
     },
-    addTodo(state: any, payload: any) {},
+    addTodo(state: postsType, payload: { text: string }) {
+      todoFromPosts(state, payload).todos.push({
+        id: Date.now(),
+        text: payload.text,
+        changeSave: false,
+        isDone: false,
+      });
+    },
+    removeTodo(state: postsType, payload: { id: number }) {
+      todoFromPosts(state, payload).todos = todoFromPosts(
+        state,
+        payload
+      ).todos.filter((todo: TodosTypes) => todo.id !== payload.id);
+    },
+    changeTodo(state: postsType, payload: { id: number }) {
+      todoFromPosts(state, payload).todos.forEach((todo: TodosTypes) => {
+        if (todo.id === payload.id) todo.changeSave = !todo.changeSave;
+      });
+    },
+    saveText(state: postsType, payload: { id: number; text: string }) {
+      todoFromPosts(state, payload).todos.forEach((todo: TodosTypes) => {
+        if (todo.id === payload.id) {
+          todo.changeSave = !todo.changeSave;
+          todo.text = payload.text;
+        }
+      });
+    },
+    cancelChanges(state: postsType, payload: { id: number }) {
+      let text: string;
+      loadPosts("posts").forEach((arr: postType) => {
+        arr.todos.forEach((todo: TodosTypes) => {
+          if (todo.id == payload.id) {
+            text = todo.text;
+          }
+        });
+      });
+      todoFromPosts(state, payload).todos.forEach((todo: TodosTypes) => {
+        if (todo.id === payload.id) {
+          todo.changeSave = !todo.changeSave;
+          todo.text = text;
+        }
+      });
+    },
+    cancelAllChanges(state: postsType) {
+      state.posts = loadPosts("posts");
+    },
+    markTodo(state: postsType, payload: { id: number }) {
+      todoFromPosts(state, payload).todos.forEach((todo: TodosTypes) => {
+        if (todo.id === payload.id) {
+          todo.isDone = !todo.isDone;
+        }
+      });
+    },
   },
 };

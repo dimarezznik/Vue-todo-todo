@@ -2,11 +2,12 @@
   <div class="main">
     <my-button @click="openModal">Новая заметка</my-button>
     <my-modal v-model:show="show">
-      <todo-form @add="addPost" v-model:show="show">
+      <todo-form v-model:show="show">
         <my-input
           placeholder="Введите название заметки"
           type="text"
           v-model="text"
+          v-on:keydown.enter="addPost(text)"
         />
         <my-button @click="addPost(text)">Добавить заметку</my-button>
       </todo-form>
@@ -25,7 +26,18 @@
             >Изменить</my-button
           >
         </template>
-        <my-button @click="removePost(post.id)">Удалить</my-button>
+        <my-button @click="confirm = true">Удалить</my-button>
+        <my-modal v-model:show="confirm">
+          <div class="confirm">
+            <h3>Вы точно хотите удалить?</h3>
+            <div class="btns">
+              <my-button @click="removePost(post.id), (confirm = false)"
+                >Да</my-button
+              >
+              <my-button @click="confirm = false">Нет</my-button>
+            </div>
+          </div>
+        </my-modal>
       </todo-list>
     </template>
     <template v-else>
@@ -53,6 +65,7 @@ export default defineComponent({
   },
   data() {
     return {
+      confirm: false,
       show: false,
       text: "",
       changeInput: false,
@@ -102,5 +115,32 @@ p {
   padding: 10px;
   border-bottom: 1px solid aquamarine;
   color: blueviolet;
+  cursor: pointer;
+}
+
+p:hover {
+  color: gold;
+}
+
+.confirm {
+  position: relative;
+  padding: 50px;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50px);
+  background: white;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+h3 {
+  background: white;
+}
+
+.btns {
+  margin-top: 15px;
+  background: white;
+  display: flex;
+  gap: 15px;
 }
 </style>

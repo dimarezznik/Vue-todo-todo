@@ -29,7 +29,7 @@ export default defineComponent({
   bottom: 0;
   right: 0;
   left: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.1);
   display: flex;
   position: fixed;
 }
@@ -37,7 +37,7 @@ export default defineComponent({
 .modal-content {
   margin: 100px auto;
   background: white;
-  border-radius: 15px;
   height: 200px;
+  width: 400px;
 }
 </style>
