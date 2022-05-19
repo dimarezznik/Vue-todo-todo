@@ -1,4 +1,4 @@
-import { loadPosts, setLocalStorage } from "@/storage";
+import client from "@/storage";
 
 export interface postType {
   id: number;
@@ -20,7 +20,7 @@ interface TodosTypes {
 
 function todoFromPosts(state: any, payload: any) {
   return state.posts.find((post: postType) => {
-    if (Number(payload.urlId) === post.id) {
+    if (Number(payload.postId) === post.id) {
       return post.todos;
     }
   });
@@ -28,7 +28,7 @@ function todoFromPosts(state: any, payload: any) {
 
 export const todo = {
   state: () => ({
-    posts: loadPosts("posts"),
+    posts: client.loadPosts("posts"),
   }),
   getters: {
     getPosts(state: postsType) {
@@ -43,11 +43,11 @@ export const todo = {
         text: text,
         changeSave: false,
       });
-      setLocalStorage("posts", state.posts);
+      client.setLocalStorage("posts", state.posts);
     },
     removePost(state: postsType, id: number) {
       state.posts = state.posts.filter((post: postType) => post.id !== id);
-      setLocalStorage("posts", state.posts);
+      client.setLocalStorage("posts", state.posts);
     },
     saveNewText(state: postsType, payload: { id: number; text: string }) {
       state.posts.forEach((post: postType) => {
@@ -55,7 +55,7 @@ export const todo = {
           post.text = payload.text;
         }
       });
-      setLocalStorage("posts", state.posts);
+      client.setLocalStorage("posts", state.posts);
     },
     showInput(state: postsType, payload: { id: number; changeSave: boolean }) {
       state.posts.forEach((post: postType) => {
@@ -63,7 +63,7 @@ export const todo = {
           post.changeSave = payload.changeSave;
         }
       });
-      setLocalStorage("posts", state.posts);
+      client.setLocalStorage("posts", state.posts);
     },
     addTodo(state: postsType, payload: { text: string }) {
       todoFromPosts(state, payload).todos.push({
@@ -72,6 +72,7 @@ export const todo = {
         changeSave: false,
         isDone: false,
       });
+      client.setLocalStorage("todos", todoFromPosts(state, payload).todos);
     },
     removeTodo(state: postsType, payload: { id: number }) {
       todoFromPosts(state, payload).todos = todoFromPosts(
@@ -91,15 +92,14 @@ export const todo = {
           todo.text = payload.text;
         }
       });
+      client.setLocalStorage("todos", todoFromPosts(state, payload).todos);
     },
     cancelChanges(state: postsType, payload: { id: number }) {
       let text: string;
-      loadPosts("posts").forEach((arr: postType) => {
-        arr.todos.forEach((todo: TodosTypes) => {
-          if (todo.id == payload.id) {
-            text = todo.text;
-          }
-        });
+      client.loadPosts("todos").forEach((todo: postType) => {
+        if (todo.id == payload.id) {
+          text = todo.text;
+        }
       });
       todoFromPosts(state, payload).todos.forEach((todo: TodosTypes) => {
         if (todo.id === payload.id) {
@@ -109,7 +109,7 @@ export const todo = {
       });
     },
     cancelAllChanges(state: postsType) {
-      state.posts = loadPosts("posts");
+      state.posts = client.loadPosts("posts");
     },
     markTodo(state: postsType, payload: { id: number }) {
       todoFromPosts(state, payload).todos.forEach((todo: TodosTypes) => {
@@ -117,6 +117,13 @@ export const todo = {
           todo.isDone = !todo.isDone;
         }
       });
+      client.setLocalStorage("todos", todoFromPosts(state, payload).todos);
+    },
+    repeatCancel(state: postsType, payload: { id: number }) {
+      todoFromPosts(state, payload).todos = client.loadPosts("todos");
+    },
+    backToMenu(state: postsType) {
+      state.posts = client.loadPosts("posts");
     },
   },
 };
