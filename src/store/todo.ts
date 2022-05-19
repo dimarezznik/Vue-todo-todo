@@ -96,12 +96,10 @@ export const todo = {
     },
     cancelChanges(state: postsType, payload: { id: number }) {
       let text: string;
-      client.loadPosts("posts").forEach((arr: postType) => {
-        arr.todos.forEach((todo: TodosTypes) => {
-          if (todo.id == payload.id) {
-            text = todo.text;
-          }
-        });
+      client.loadPosts("todos").forEach((todo: postType) => {
+        if (todo.id == payload.id) {
+          text = todo.text;
+        }
       });
       todoFromPosts(state, payload).todos.forEach((todo: TodosTypes) => {
         if (todo.id === payload.id) {
