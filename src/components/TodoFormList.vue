@@ -14,30 +14,42 @@
     </my-modal>
     <template v-if="getPosts.length">
       <todo-list v-for="post in getPosts" :post="post" :key="post.id">
-        <template v-if="post.changeSave">
-          <my-input type="text" v-model="post.text" />
-          <my-button @click="saveNewText(post.text, post.id)"
-            >Сохранить</my-button
-          >
-        </template>
-        <template v-if="!post.changeSave">
-          <p @click="$router.push(`/${post.id}`)">{{ post.text }}</p>
-          <my-button @click="showInput(!post.changeSave, post.id)"
-            >Изменить</my-button
-          >
-        </template>
-        <my-button @click="confirm = true">Удалить</my-button>
-        <my-modal v-model:show="confirm">
-          <div class="confirm">
-            <h3>Вы точно хотите удалить?</h3>
-            <div class="btns">
-              <my-button @click="removePost(post.id), (confirm = false)"
-                >Да</my-button
-              >
-              <my-button @click="confirm = false">Нет</my-button>
+        <div class="post">
+          <template v-if="post.changeSave">
+            <my-input type="text" v-model="post.text" />
+            <my-button @click="saveNewText(post.text, post.id)"
+              >Сохранить</my-button
+            >
+          </template>
+          <template v-if="!post.changeSave">
+            <p @click="clearStorageTodo(post.id)">{{ post.text }}</p>
+            <my-button @click="showInput(!post.changeSave, post.id)"
+              >Изменить</my-button
+            >
+          </template>
+          <my-button @click="confirm = true">Удалить</my-button>
+
+          <my-modal v-model:show="confirm">
+            <div class="confirm">
+              <h3>Вы точно хотите удалить?</h3>
+              <div class="btns">
+                <my-button @click="removePost(post.id)">Да</my-button>
+                <my-button @click="confirm = false">Нет</my-button>
+              </div>
             </div>
-          </div>
-        </my-modal>
+          </my-modal>
+        </div>
+        <template v-if="post.todos.length">
+          <ul class="inside_todo">
+            <li
+              v-for="todo in showInsideTodo(post.todos)"
+              :style="todo.isDone ? 'text-decoration: line-through' : ''"
+            >
+              <span>{{ todo.text }}</span>
+            </li>
+            <template v-if="post.todos.length > 3"> ... </template>
+          </ul>
+        </template>
       </todo-list>
     </template>
     <template v-else>
@@ -54,6 +66,7 @@ import MyModal from "@/components/UIComponents/MyModal.vue";
 import TodoForm from "@/components/TodoForm.vue";
 import TodoList from "@/components/TodoList.vue";
 import { postsType } from "@/store/todo";
+import client from "@/storage";
 
 export default defineComponent({
   components: {
@@ -73,7 +86,14 @@ export default defineComponent({
     };
   },
   methods: {
-    openModal(): void {
+    clearStorageTodo(id: number) {
+      client.setLocalStorage("todos", []);
+      this.$router.push(`/${id}`);
+    },
+    showInsideTodo(todo: string | any[]) {
+      return todo.slice(0, 3);
+    },
+    openModal() {
       this.show = !this.show;
     },
     addPost(text: string) {
@@ -84,6 +104,7 @@ export default defineComponent({
     },
     removePost(id: number) {
       this.$store.commit("removePost", id);
+      this.confirm = false;
     },
     showInput(changeSave: boolean, id: number) {
       this.$store.commit("showInput", { changeSave, id });
@@ -137,10 +158,31 @@ h3 {
   background: white;
 }
 
+span {
+  color: blueviolet;
+}
+
 .btns {
   margin-top: 15px;
   background: white;
   display: flex;
   gap: 15px;
+}
+
+.post {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 15px;
+}
+
+.inside_todo {
+  border: 1px solid aquamarine;
+  padding: 5px 20px;
+}
+
+.done-todo {
+  text-decoration: line-through;
 }
 </style>

@@ -1,59 +1,51 @@
 <template>
   <div class="inside-page">
     <todo-form class="form-todo">
-      <my-button @click="$router.push('/')">Назад</my-button>
+      <my-button @click="backToMenu">Назад</my-button>
       <my-input
         placeholder="Введите название заметки"
         type="text"
         v-model="text"
-        v-on:keydown.enter="addTodo($route.params.id, text)"
+        v-on:keydown.enter="addTodo(text)"
       />
-      <my-button @click="addTodo($route.params.id, text)"
-        >Добавить заметку</my-button
-      >
+      <my-button @click="addTodo(text)">Добавить заметку</my-button>
       <my-button @click="saveChanges($route.params.id)">Сохранить</my-button>
       <my-button @click="cancelAllChanges($route.params.id)"
         >Отменить изменения</my-button
       >
+      <my-button @click="repeatCancel">Повторить отмененное</my-button>
     </todo-form>
 
     <todo-list v-for="todo in getTodo($route.params.id)" :key="todo.id">
-      <template v-if="!todo.changeSave">
-        <input
-          class="check"
-          type="checkbox"
-          @click="markTodo($route.params.id, todo.id)"
-          v-model="todo.isDone"
-        />
-        <p :class="todo.isDone ? 'done' : 'not-ready'">{{ todo.text }}</p>
-        <template v-if="!todo.isDone">
-          <my-button @click="changeTodo($route.params.id, todo.id)"
-            >Изменить</my-button
-          >
-          <my-button @click="show = true">Удалить</my-button>
+      <div class="todo">
+        <template v-if="!todo.changeSave">
+          <input
+            class="check"
+            type="checkbox"
+            @click="markTodo(todo.id)"
+            v-model="todo.isDone"
+          />
+          <p :class="todo.isDone ? 'done' : 'not-ready'">{{ todo.text }}</p>
+          <template v-if="!todo.isDone">
+            <my-button @click="changeTodo(todo.id)">Изменить</my-button>
+            <my-button @click="show = true">Удалить</my-button>
+          </template>
         </template>
-      </template>
-      <template v-else>
-        <my-input type="text" v-model="todo.text" />
-        <my-button @click="saveText($route.params.id, todo.id, todo.text)"
-          >Изменить</my-button
-        >
-        <my-button @click="cancelChanges($route.params.id, todo.id)"
-          >Отменить</my-button
-        >
-      </template>
-      <my-modal v-model:show="show">
-        <div class="confirm">
-          <h3>Вы точно хотите удалить?</h3>
-          <div class="btns">
-            <my-button
-              @click="removeTodo($route.params.id, todo.id), (show = false)"
-              >Да</my-button
-            >
-            <my-button @click="show = false">Нет</my-button>
+        <template v-else>
+          <my-input type="text" v-model="todo.text" />
+          <my-button @click="saveText(todo.id, todo.text)">Изменить</my-button>
+          <my-button @click="cancelChanges(todo.id)">Отменить</my-button>
+        </template>
+        <my-modal v-model:show="show">
+          <div class="confirm">
+            <h3>Вы точно хотите удалить?</h3>
+            <div class="btns">
+              <my-button @click="removeTodo(todo.id)">Да</my-button>
+              <my-button @click="show = false">Нет</my-button>
+            </div>
           </div>
-        </div>
-      </my-modal>
+        </my-modal>
+      </div>
     </todo-list>
   </div>
 </template>
@@ -64,7 +56,7 @@ import TodoForm from "@/components/TodoForm";
 import MyButton from "@/components/UIComponents/MyButton";
 import myInput from "@/components/UIComponents/MyInput";
 import MyModal from "@/components/UIComponents/MyModal";
-import { setLocalStorage } from "@/storage";
+import client from "@/storage";
 
 export default {
   components: { TodoList, TodoForm, MyButton, myInput, MyModal },
@@ -76,39 +68,56 @@ export default {
     };
   },
   methods: {
-    getTodo(id) {
-      return this.getPosts.find((post) => post.id === Number(id)).todos;
+    backToMenu() {
+      this.$router.push("/");
+      this.$store.commit("backToMenu", { postId: this.$route.params.id });
     },
-    addTodo(urlId, text) {
+    repeatCancel() {
+      if (client.loadPosts("todos").length) {
+        this.$store.commit("repeatCancel", { postId: this.$route.params.id });
+      }
+    },
+    getTodo(id) {
+      return this.allPosts.find((post) => post.id === Number(id))?.todos;
+    },
+    addTodo(text) {
       if (!this.text.trim()) return;
-      this.$store.commit("addTodo", { urlId, text });
+      this.$store.commit("addTodo", { text, postId: this.$route.params.id });
       this.text = "";
     },
 
-    removeTodo(urlId, id) {
-      this.$store.commit("removeTodo", { urlId, id });
+    removeTodo(id) {
+      this.$store.commit("removeTodo", { postId: this.$route.params.id, id });
+      this.show = false;
     },
-    changeTodo(urlId, id) {
-      this.$store.commit("changeTodo", { urlId, id });
+    changeTodo(id) {
+      this.$store.commit("changeTodo", { postId: this.$route.params.id, id });
     },
-    saveText(urlId, id, text) {
-      this.$store.commit("saveText", { urlId, id, text });
+    saveText(id, text) {
+      this.$store.commit("saveText", {
+        postId: this.$route.params.id,
+        id,
+        text,
+      });
     },
-    cancelChanges(urlId, id) {
-      this.$store.commit("cancelChanges", { urlId, id });
+    cancelChanges(id) {
+      this.$store.commit("cancelChanges", {
+        postId: this.$route.params.id,
+        id,
+      });
     },
-    cancelAllChanges(urlId) {
-      this.$store.commit("cancelAllChanges", { urlId });
+    cancelAllChanges() {
+      this.$store.commit("cancelAllChanges", { postId: this.$route.params.id });
     },
-    markTodo(urlId, id) {
-      this.$store.commit("markTodo", { urlId, id });
+    markTodo(id) {
+      this.$store.commit("markTodo", { postId: this.$route.params.id, id });
     },
     saveChanges() {
-      setLocalStorage("posts", this.getPosts);
+      client.setLocalStorage("posts", this.allPosts);
     },
   },
   computed: {
-    getPosts() {
+    allPosts() {
       return this.$store.getters.getPosts;
     },
   },
@@ -132,6 +141,13 @@ export default {
   border-bottom: 1px solid aquamarine;
   color: blueviolet;
   transition: ease 0.4s;
+}
+
+.todo {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 15px;
 }
 
 .confirm {
